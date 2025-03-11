@@ -1,46 +1,104 @@
-# Getting Started with Create React App
+# Art Web - CRM Uygulaması
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Bu proje, tıbbi cihaz satışı yapan şirketler için geliştirilmiş bir CRM (Müşteri İlişkileri Yönetimi) web uygulamasıdır. Uygulama, klinik bilgilerini yönetme, teklifler oluşturma, ameliyat ve ziyaret raporları tutma gibi özelliklere sahiptir.
 
-## Available Scripts
+## Başlangıç
 
-In the project directory, you can run:
+Projeyi yerel geliştirme ortamında çalıştırmak için aşağıdaki adımları izleyin.
+
+### Ön Koşullar
+
+- Node.js (v14+)
+- npm veya yarn
+- Supabase hesabı
+
+### Kurulum
+
+1. Repoyu klonlayın:
+   ```bash
+   git clone https://github.com/sizin-kullanici-adi/art-web.git
+   cd art-web
+   ```
+
+2. Bağımlılıkları yükleyin:
+   ```bash
+   npm install
+   # veya
+   yarn install
+   ```
+
+3. `.env.example` dosyasını kopyalayıp `.env` olarak yeniden adlandırın:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. `.env` dosyasını Supabase proje bilgilerinizle güncelleyin:
+   ```
+   REACT_APP_SUPABASE_URL=https://your-project-url.supabase.co
+   REACT_APP_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+5. Uygulamayı başlatın:
+   ```bash
+   npm start
+   # veya
+   yarn start
+   ```
+
+Uygulama http://localhost:3000 adresinde çalışacaktır.
+
+## Rol Tabanlı Erişim
+
+Uygulama dört farklı kullanıcı rolünü destekler:
+
+- **Admin**: Tüm özelliklere tam erişim.
+- **Manager**: Takım performansı ve analitik verilerine erişebilir, ancak kullanıcı yönetimi yapamaz.
+- **Regional Manager**: Bölgesel takımları yönetir.
+- **Field User**: Sahada çalışan kullanıcılar için temel özellikler.
+
+## Teknolojiler
+
+- React.js
+- TypeScript
+- Material UI
+- Supabase (Backend ve Veritabanı)
+- React Router
+
+## Proje Yapısı
+
+```
+src/
+├── components/       # Yeniden kullanılabilir UI bileşenleri
+├── lib/              # Harici servis yapılandırmaları
+├── pages/            # Sayfa bileşenleri
+├── services/         # API ve veri işlemleri
+└── types/            # TypeScript tipleri ve arayüzleri
+```
+
+## Mevcut Komutlar
+
+Bu proje Create React App ile oluşturulmuştur. Aşağıdaki komutları kullanabilirsiniz:
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Uygulamayı geliştirme modunda çalıştırır.\
+[http://localhost:3000](http://localhost:3000) adresinden tarayıcıda görüntüleyebilirsiniz.
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Test çalıştırıcısını etkileşimli izleme modunda başlatır.
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Uygulamayı üretim için `build` klasörüne derler.\
+Derleme işlemi optimize edilmiş ve performanslı bir şekilde yapılır.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Dağıtım
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Bu uygulama, Netlify, Vercel, Firebase Hosting veya GitHub Pages gibi modern web barındırma platformlarına kolayca dağıtılabilir.
 
-### `npm run eject`
+Dağıtım hakkında daha fazla bilgi için [Create React App deployment](https://facebook.github.io/create-react-app/docs/deployment) sayfasına göz atabilirsiniz.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Lisans
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.

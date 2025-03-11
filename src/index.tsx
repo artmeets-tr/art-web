@@ -4,6 +4,11 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+// Gerekli klasörleri oluştur
+import './lib/supabase';
+import './types';
+import './services/apiService';
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );

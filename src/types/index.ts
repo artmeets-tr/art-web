@@ -1,11 +1,24 @@
+// Kullanıcı rolleri için enum tanımı
+export enum UserRoleEnum {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  REGIONAL_MANAGER = 'regional_manager',
+  FIELD_USER = 'field_user'
+}
+
+export type UserRole = UserRoleEnum | 'admin' | 'manager' | 'regional_manager' | 'field_user';
+
 export type User = {
   id: string;
   email: string;
-  name: string;
-  role: 'admin' | 'manager' | 'regional_manager' | 'field_user';
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  role: UserRole;
   region_id?: number;
   status: 'active' | 'inactive';
   created_at?: string;
+  user_regions?: { region_id: number; regions?: { id: number; name: string } }[];
 };
 
 export type Region = {
