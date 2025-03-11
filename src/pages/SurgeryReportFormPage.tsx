@@ -168,28 +168,13 @@ export const SurgeryReportFormPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {isEditMode ? 'Ameliyat Raporu Düzenle' : 'Yeni Ameliyat Raporu'}
-      </Typography>
-      
-      <Divider sx={{ mb: 3 }} />
-      
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {success}
-        </Alert>
-      )}
-      
-      <Paper sx={{ p: 3 }}>
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
+    <FormContainer 
+      title={isEditMode ? 'Ameliyat Raporu Düzenle' : 'Yeni Ameliyat Raporu'}
+      error={error}
+      success={success}
+    >
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.clinic_id}>
                 <InputLabel>Klinik</InputLabel>
@@ -314,26 +299,13 @@ export const SurgeryReportFormPage: React.FC = () => {
               />
             </Grid>
             
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/surgery-reports')}
-                disabled={saving}
-              >
-                İptal
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={saving}
-              >
-                {saving ? <CircularProgress size={24} /> : (isEditMode ? 'Güncelle' : 'Kaydet')}
-              </Button>
-            </Grid>
+            <FormButtons 
+              isEditMode={isEditMode}
+              isSaving={saving}
+              onCancel={() => navigate('/surgery-reports')}
+            />
           </Grid>
         </form>
-      </Paper>
-    </Box>
+    </FormContainer>
   );
 };

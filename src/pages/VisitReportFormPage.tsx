@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Typography,
   TextField,
-  Button,
   Grid,
-  Paper,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   FormHelperText,
   CircularProgress,
-  Divider,
-  Alert,
+  Box,
   SelectChangeEvent,
   Switch,
   FormControlLabel
@@ -25,6 +20,8 @@ import { tr } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { VisitReport, Clinic } from '../types';
 import { visitReportService, clinicService, userService } from '../services';
+import { FormContainer } from '../components/common/FormContainer';
+import { FormButtons } from '../components/common/FormButtons';
 
 export const VisitReportFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -189,28 +186,13 @@ export const VisitReportFormPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {isEditMode ? 'Ziyaret Raporu Düzenle' : 'Yeni Ziyaret Raporu'}
-      </Typography>
-      
-      <Divider sx={{ mb: 3 }} />
-      
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert severity="success" sx={{ mb: 3 }}>
-          {success}
-        </Alert>
-      )}
-      
-      <Paper sx={{ p: 3 }}>
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
+    <FormContainer 
+      title={isEditMode ? 'Ziyaret Raporu Düzenle' : 'Yeni Ziyaret Raporu'}
+      error={error}
+      success={success}
+    >
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.clinic_id}>
                 <InputLabel>Klinik</InputLabel>
@@ -331,26 +313,13 @@ export const VisitReportFormPage: React.FC = () => {
               />
             </Grid>
             
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3 }}>
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/visit-reports')}
-                disabled={saving}
-              >
-                İptal
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={saving}
-              >
-                {saving ? <CircularProgress size={24} /> : (isEditMode ? 'Güncelle' : 'Kaydet')}
-              </Button>
-            </Grid>
+            <FormButtons 
+              isEditMode={isEditMode}
+              isSaving={saving}
+              onCancel={() => navigate('/visit-reports')}
+            />
           </Grid>
         </form>
-      </Paper>
-    </Box>
+    </FormContainer>
   );
 };
