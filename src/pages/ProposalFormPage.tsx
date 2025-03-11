@@ -261,8 +261,8 @@ export const ProposalFormPage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (date: Date | null) => {
-    setFormData(prev => ({ ...prev, first_payment_date: date }));
+  const handleDateChange = (newValue: Date | null) => {
+    setFormData(prev => ({ ...prev, first_payment_date: newValue }));
   };
 
   const handleAddItem = () => {
@@ -348,28 +348,64 @@ export const ProposalFormPage: React.FC = () => {
         return;
       }
 
+      // Toplam hesaplama
+      let subtotal = 0;
+      for (const item of items) {
+        const unitPrice = parseFloat(item.unit_price.toString()) || 0;
+        const quantity = parseInt(item.quantity.toString()) || 0;
+        subtotal += unitPrice * quantity;
+      }
+      
+      // İndirim uygula
+      const discount = formData.discount || 0;
+      const totalAmount = subtotal * (1 - discount / 100);
+      
       // items alanından id ve proposal_id'yi kaldıralım, çünkü bunlar sunucuda oluşturulacak
-      const proposalItems = items.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        excess: item.excess,
-        unit_price: item.unit_price,
-        excess_percentage: item.excess_percentage
-      }));
+      const proposalItems = items.map(item => {
+        // Birim fiyat ve miktar ile toplam tutarı hesapla
+        const unitPrice = parseFloat(item.unit_price.toString()) || 0;
+        const quantity = parseInt(item.quantity.toString()) || 0;
+        
+        return {
+          product_id: item.product_id,
+          quantity: quantity,
+          excess: item.excess,
+          unit_price: unitPrice,
+          excess_percentage: item.excess_percentage || 0
+          // total_price ve discount alanları veritabanında olmadığı için kaldırıldı
+        };
+      });
+
+      // Tarih kontrolü
+      let paymentDate = formData.first_payment_date;
+      if (!(paymentDate instanceof Date) && paymentDate) {
+        paymentDate = new Date(paymentDate);
+      }
 
       const proposalData = {
         ...formData,
         // first_payment_date'i string formatına dönüştürme
-        first_payment_date: formData.first_payment_date ? formData.first_payment_date.toISOString().split('T')[0] : undefined,
+        first_payment_date: paymentDate ? paymentDate.toISOString().split('T')[0] : undefined,
         user_id: currentUser?.id || '',
-        items: proposalItems
+        items: proposalItems,
+        // Varsayılan değerler ve toplam tutar
+        currency: formData.currency || 'TRY',
+        discount: formData.discount || 0,
+        total_amount: totalAmount,
+        installment_count: formData.installment_count || 1,
+        installment_amount: totalAmount / (formData.installment_count || 1)
       };
 
+      console.log("Gönderilecek teklif verisi:", proposalData); // Debug için
+
       // API entegrasyonu
+      let result;
       if (isEditMode && id && !isNaN(Number(id))) {
-        await proposalService.update(parseInt(id), proposalData as any);
+        result = await proposalService.update(parseInt(id), proposalData as any);
+        console.log("Güncellenmiş teklif:", result);
       } else {
-        await proposalService.create(proposalData as any);
+        result = await proposalService.create(proposalData as any);
+        console.log("Oluşturulan teklif:", result);
       }
 
       setMessage({ 
@@ -385,7 +421,7 @@ export const ProposalFormPage: React.FC = () => {
       }, 1500);
     } catch (error) {
       console.error('Kaydetme hatası:', error);
-      setMessage({ text: 'Teklif kaydedilirken bir hata oluştu', type: 'error' });
+      setMessage({ text: `Teklif kaydedilirken bir hata oluştu: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`, type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -500,15 +536,15 @@ export const ProposalFormPage: React.FC = () => {
             {/* Taksit Sayısı */}
             <Grid item xs={12} md={6}>
               <TextField
-                name="installment_count"
                 label="Taksit Sayısı"
+                name="installment_count"
                 type="number"
-                value={formData.installment_count}
+                value={formData.installment_count || ''}
                 onChange={handleChange}
                 fullWidth
-                InputProps={{ inputProps: { min: 1 } }}
-                disabled={(isEditMode && !canEditProposal()) || 
-                          (currentUser?.role === 'field_user' && formData.status !== 'approved')}
+                inputProps={{ min: 1, max: 12 }}
+                helperText="En fazla 12 taksit"
+                disabled={false}
               />
             </Grid>
 
@@ -517,15 +553,15 @@ export const ProposalFormPage: React.FC = () => {
               <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={tr}>
                 <DatePicker
                   label="İlk Ödeme Tarihi"
-                  value={formData.first_payment_date}
-                  onChange={handleDateChange}
-                  slotProps={{ 
-                    textField: { 
-                      fullWidth: true 
-                    } 
+                  value={formData.first_payment_date || null}
+                  onChange={(newValue) => handleDateChange(newValue)}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      variant: 'outlined',
+                      disabled: false // İlk ödeme tarihini her zaman aktif yapıyoruz
+                    }
                   }}
-                  disabled={(isEditMode && !canEditProposal()) || 
-                           (currentUser?.role === 'field_user' && formData.status !== 'approved')}
                 />
               </LocalizationProvider>
             </Grid>
