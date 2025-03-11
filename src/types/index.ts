@@ -83,8 +83,10 @@ export type ProposalItem = {
   quantity: number;
   excess: boolean;
   unit_price: number;
+  discount?: number;
+  total_price: number;
   created_at?: string;
-  excess_percentage: number;
+  excess_percentage?: number;
   product?: Product;
 };
 

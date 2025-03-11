@@ -1,32 +1,82 @@
-import { PostgrestError } from '@supabase/supabase-js';
+import { PostgrestError, PostgrestSingleResponse } from '@supabase/supabase-js';
+import type { PostgrestFilterBuilder, PostgrestBuilder } from '@supabase/postgrest-js';
 import { supabase } from '../../lib/supabase';
 
 /**
  * Supabase sorguları için tekrar eden ortak hata işleme mantığını kapsülleyen yardımcı fonksiyon
- * @param promise Supabase sorgu promise'i
+ * @param query Supabase sorgu
  * @param errorMessage Hata durumunda gösterilecek mesaj
  * @returns Promise sonucu
  */
 export async function handleSupabaseQuery<T>(
-  promise: Promise<{ data: T | null; error: PostgrestError | null }>,
+  query: Promise<PostgrestSingleResponse<T>> | PostgrestFilterBuilder<any, any, any> | PostgrestBuilder<any, any>,
   errorMessage: string
 ): Promise<T> {
   try {
-    const { data, error } = await promise;
+    // PostgrestFilterBuilder veya PostgrestBuilder'ı Promise'e dönüştür
+    const response = await Promise.resolve(query);
+    const { data, error } = response;
     
     if (error) {
-      console.error(`${errorMessage}:`, error);
+      console.error(`${errorMessage}:`, error.message);
       throw new Error(`${errorMessage}: ${error.message}`);
     }
     
-    if (!data) {
+    if (data === null) {
       throw new Error(`${errorMessage}: Veri bulunamadı`);
     }
     
     return data as T;
-  } catch (error) {
-    console.error(`${errorMessage}:`, error);
-    throw error;
+  } catch (err) {
+    console.error(`${errorMessage}:`, err);
+    throw err;
+  }
+}
+
+/**
+ * Birden çok öğe döndüren Supabase sorguları için yardımcı fonksiyon
+ */
+export async function handleSupabaseListQuery<T>(
+  query: Promise<PostgrestSingleResponse<T[]>> | PostgrestFilterBuilder<any, any, any> | PostgrestBuilder<any, any>,
+  errorMessage: string
+): Promise<T[]> {
+  try {
+    const response = await Promise.resolve(query);
+    const { data, error } = response;
+
+    if (error) {
+      console.error(`${errorMessage}:`, error.message);
+      throw new Error(`${errorMessage}: ${error.message}`);
+    }
+
+    // Veri yoksa boş dizi döndür
+    return (data as T[]) || [];
+  } catch (err) {
+    console.error(`${errorMessage}:`, err);
+    throw err;
+  }
+}
+
+/**
+ * Tek bir öğe döndüren Supabase sorguları için yardımcı fonksiyon
+ */
+export async function handleSupabaseSingleQuery<T>(
+  query: Promise<PostgrestSingleResponse<T>> | PostgrestFilterBuilder<any, any, any> | PostgrestBuilder<any, any>,
+  errorMessage: string
+): Promise<T | null> {
+  try {
+    const response = await Promise.resolve(query);
+    const { data, error } = response;
+
+    if (error) {
+      console.error(`${errorMessage}:`, error.message);
+      throw new Error(`${errorMessage}: ${error.message}`);
+    }
+
+    return data as T | null;
+  } catch (err) {
+    console.error(`${errorMessage}:`, err);
+    throw err;
   }
 }
 
