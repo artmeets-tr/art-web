@@ -1,104 +1,209 @@
-# Art Web - CRM Uygulaması
+# Art Web CRM - Tıbbi Cihaz Satış Yönetim Sistemi
 
-Bu proje, tıbbi cihaz satışı yapan şirketler için geliştirilmiş bir CRM (Müşteri İlişkileri Yönetimi) web uygulamasıdır. Uygulama, klinik bilgilerini yönetme, teklifler oluşturma, ameliyat ve ziyaret raporları tutma gibi özelliklere sahiptir.
+Art Web CRM, tıbbi cihaz satışı yapan şirketler için özel olarak tasarlanmış kapsamlı bir müşteri ilişkileri yönetim (CRM) web uygulamasıdır. Modern bir arayüz ve rol tabanlı erişim sistemi ile satış ekiplerinin verimliliğini artırmayı hedefler.
 
-## Başlangıç
+![Art Web CRM](https://via.placeholder.com/800x400?text=Art+Web+CRM)
 
-Projeyi yerel geliştirme ortamında çalıştırmak için aşağıdaki adımları izleyin.
+## 🔍 Özellikler
 
-### Ön Koşullar
+- **Klinik Yönetimi**: Müşteri kliniklerinizin iletişim bilgilerini ve geçmiş işlemlerini takip edin.
+- **Teklif Oluşturma**: Profesyonel görünümlü teklifler oluşturun, indirim ve taksit seçenekleri ekleyin.
+- **Ameliyat Raporları**: Gerçekleşen ve planlanan ameliyatları takip edin.
+- **Ziyaret Raporları**: Klinik ziyaretlerinizi kaydedin ve takip edin.
+- **Ürün Kataloğu**: Satışını yaptığınız tüm tıbbi cihaz ürünlerini yönetin.
+- **Ekip Performansı**: Satış ekibinizin performansını detaylı raporlarla analiz edin.
+- **Rol Tabanlı Erişim**: Farklı kullanıcı rolleri ile güvenli bir erişim sistemi (Admin, Yönetici, Bölge Yöneticisi, Saha Kullanıcısı).
+- **Bildirim Sistemi**: Önemli gelişmelerden anında haberdar olun.
+- **Responsif Tasarım**: Mobil cihazlarda da sorunsuz çalışan modern arayüz.
 
-- Node.js (v14+)
-- npm veya yarn
-- Supabase hesabı
+## 🛠️ Teknolojiler
 
-### Kurulum
+- **Frontend**: React, TypeScript, Material UI
+- **Backend**: Supabase (PostgreSQL + RESTful API)
+- **Kimlik Doğrulama**: Supabase Auth
+- **State Yönetimi**: React Hooks
+- **Routing**: React Router v7
+- **UI Framework**: Material UI v6
+- **Grafikler**: Recharts
 
-1. Repoyu klonlayın:
-   ```bash
-   git clone https://github.com/sizin-kullanici-adi/art-web.git
-   cd art-web
-   ```
+## 📋 Kurulum Adımları
 
-2. Bağımlılıkları yükleyin:
-   ```bash
-   npm install
-   # veya
-   yarn install
-   ```
+### Ön Gereksinimler
 
-3. `.env.example` dosyasını kopyalayıp `.env` olarak yeniden adlandırın:
-   ```bash
-   cp .env.example .env
-   ```
+- Node.js v14+ ve npm/yarn
+- Supabase hesabı ([supabase.com](https://supabase.com))
 
-4. `.env` dosyasını Supabase proje bilgilerinizle güncelleyin:
-   ```
-   REACT_APP_SUPABASE_URL=https://your-project-url.supabase.co
-   REACT_APP_SUPABASE_ANON_KEY=your-anon-key
-   ```
+### 1. Projeyi Klonlama
 
-5. Uygulamayı başlatın:
-   ```bash
-   npm start
-   # veya
-   yarn start
-   ```
+```bash
+git clone https://github.com/artmeets-tr/art-web.git
+cd art-web
+```
+
+### 2. Bağımlılıkları Yükleme
+
+```bash
+npm install
+# veya
+yarn install
+```
+
+### 3. Supabase Kurulumu
+
+1. [Supabase](https://supabase.com) üzerinde yeni bir proje oluşturun
+2. Veritabanı şemasını oluşturmak için aşağıdaki adımları izleyin:
+   - SQL Editör'e girin
+   - `tables.sql` dosyasını indirin: [tables.sql](https://github.com/artmeets-tr/art-web/assets/sql/tables.sql)
+   - SQL Editör'de bu dosyayı çalıştırın
+
+### 4. Ortam Değişkenlerini Yapılandırma
+
+`.env.example` dosyasını kopyalayıp `.env` olarak yeniden adlandırın:
+
+```bash
+cp .env.example .env
+```
+
+Sonra `.env` dosyasını Supabase proje bilgilerinizle güncelleyin:
+
+```
+REACT_APP_SUPABASE_URL=https://your-project-url.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-anon-key
+REACT_APP_API_BASE_URL=https://api.example.com
+REACT_APP_ENVIRONMENT=development
+```
+
+### 5. Uygulamayı Çalıştırma
+
+```bash
+npm start
+# veya
+yarn start
+```
 
 Uygulama http://localhost:3000 adresinde çalışacaktır.
 
-## Rol Tabanlı Erişim
+### 6. İlk Admin Kullanıcı Oluşturma
 
-Uygulama dört farklı kullanıcı rolünü destekler:
+Yeni oluşturduğunuz Supabase projesinde:
 
-- **Admin**: Tüm özelliklere tam erişim.
-- **Manager**: Takım performansı ve analitik verilerine erişebilir, ancak kullanıcı yönetimi yapamaz.
-- **Regional Manager**: Bölgesel takımları yönetir.
-- **Field User**: Sahada çalışan kullanıcılar için temel özellikler.
+1. Authentication > Users bölümüne gidin
+2. "Invite" butonuna tıklayın
+3. Email adresinizi ve yeni kullanıcının bilgilerini girin
+4. SQL Editör'de aşağıdaki sorguyu çalıştırarak kullanıcı rolünü admin olarak ayarlayın:
 
-## Teknolojiler
-
-- React.js
-- TypeScript
-- Material UI
-- Supabase (Backend ve Veritabanı)
-- React Router
-
-## Proje Yapısı
-
-```
-src/
-├── components/       # Yeniden kullanılabilir UI bileşenleri
-├── lib/              # Harici servis yapılandırmaları
-├── pages/            # Sayfa bileşenleri
-├── services/         # API ve veri işlemleri
-└── types/            # TypeScript tipleri ve arayüzleri
+```sql
+UPDATE auth.users SET role = 'admin' WHERE email = 'your-email@example.com';
 ```
 
-## Mevcut Komutlar
+## 🧩 Özelleştirme Rehberi
 
-Bu proje Create React App ile oluşturulmuştur. Aşağıdaki komutları kullanabilirsiniz:
+### Tema Özelleştirme
 
-### `npm start`
+`src/App.tsx` dosyasında bulunan `createTheme` fonksiyonunu düzenleyerek şirketinizin kurumsal renklerine uygun bir tema oluşturabilirsiniz:
 
-Uygulamayı geliştirme modunda çalıştırır.\
-[http://localhost:3000](http://localhost:3000) adresinden tarayıcıda görüntüleyebilirsiniz.
+```typescript
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1e3a8a', // Ana renk
+      light: '#4e67b0',
+      dark: '#0d2b6b',
+    },
+    secondary: {
+      main: '#64748b', // İkincil renk
+      light: '#94a3b8',
+      dark: '#475569',
+    },
+    // Diğer renkler...
+  },
+  // Tipografi, gölgeler vb. özelleştirmeleri...
+});
+```
 
-### `npm test`
+### Yeni Özellikler Ekleme
 
-Test çalıştırıcısını etkileşimli izleme modunda başlatır.
+Yeni bir özellik eklemek için yapılması gerekenler:
 
-### `npm run build`
+1. `src/types/index.ts` dosyasında gerekli tip tanımlamalarını oluşturun
+2. `src/services/` dizini altında yeni bir servis oluşturun
+3. `src/pages/` dizini altında yeni bir sayfa bileşeni oluşturun
+4. `src/App.tsx` dosyasında yeni rota tanımlamasını ekleyin
 
-Uygulamayı üretim için `build` klasörüne derler.\
-Derleme işlemi optimize edilmiş ve performanslı bir şekilde yapılır.
+Örnek bir servis dosyası:
 
-## Dağıtım
+```typescript
+// src/services/newFeatureService.ts
+import { supabase } from '../lib/supabase';
+import { NewFeatureType } from '../types';
 
-Bu uygulama, Netlify, Vercel, Firebase Hosting veya GitHub Pages gibi modern web barındırma platformlarına kolayca dağıtılabilir.
+export const fetchNewFeatures = async () => {
+  const { data, error } = await supabase
+    .from('new_features')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data as NewFeatureType[];
+};
 
-Dağıtım hakkında daha fazla bilgi için [Create React App deployment](https://facebook.github.io/create-react-app/docs/deployment) sayfasına göz atabilirsiniz.
+// Diğer CRUD operasyonları...
+```
 
-## Lisans
+### Rol Tabanlı İzinleri Özelleştirme
 
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+Kullanıcı rollerini ve izinlerini değiştirmek için:
+
+1. `src/types/index.ts` dosyasında `UserRoleEnum` enum'unu güncelleyin
+2. `src/components/RoleBasedRoute.tsx` bileşenini güncelleyerek rol izinlerini ayarlayın
+3. Supabase veritabanında ilgili RLS (Row Level Security) politikalarını güncelleyin
+
+## 🚀 Dağıtım
+
+Uygulamayı üretim ortamına dağıtmak için:
+
+```bash
+npm run build
+# veya
+yarn build
+```
+
+Oluşturulan `build` klasörünü tercih ettiğiniz bir web barındırma hizmetine (Netlify, Vercel, Firebase Hosting, vb.) yükleyebilirsiniz.
+
+.env dosyasını üretim ortamı için güncelleyin:
+
+```
+REACT_APP_SUPABASE_URL=https://your-production-project.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-production-anon-key
+REACT_APP_API_BASE_URL=https://api.your-domain.com
+REACT_APP_ENVIRONMENT=production
+```
+
+## 📊 Demo Verileri Yükleme
+
+Geliştirme aşamasında test verileriyle çalışmak için:
+
+1. [demo-data.sql](https://github.com/artmeets-tr/art-web/assets/sql/demo-data.sql) dosyasını indirin
+2. Supabase SQL Editör'de bu dosyayı çalıştırın
+
+## 🤝 Katkıda Bulunma
+
+Katkılarınızı memnuniyetle karşılıyoruz! Katkıda bulunmak için:
+
+1. Bu repoyu forklayın
+2. Yeni bir branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Add some amazing feature'`)
+4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
+
+## 📄 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için [LICENSE](LICENSE) dosyasına bakın.
+
+## 📧 İletişim
+
+Sorularınız veya önerileriniz için: [info@artmeets.com](mailto:info@artmeets.com)
+
+---
+
+Developed with ❤️ by [Art Meets Technology](https://artmeets.com)
