@@ -147,12 +147,27 @@ export const userService = {
    * @returns Kullanıcı listesi
    */
   async getAllUsers(): Promise<User[]> {
-    return handleSupabaseQuery(
-      supabase
+    try {
+      console.log('getAllUsers çağrıldı');
+      
+      // Daha detaylı sorgu - kullanıcıları ve bölge bilgilerini al
+      const { data, error } = await supabase
         .from('users')
-        .select('*')
-        .order('first_name', { ascending: true }),
-      'Kullanıcı listesi alınırken hata'
-    );
+        .select('*, region:region_id(id, name)')
+        .order('first_name', { ascending: true });
+      
+      if (error) {
+        console.error('Kullanıcı listesi alınırken hata:', error);
+        throw new Error(`Kullanıcı listesi alınırken hata: ${error.message}`);
+      }
+      
+      console.log('Getirilen kullanıcı sayısı:', data?.length);
+      console.log('Kullanıcı verileri:', data);
+      
+      return data || [];
+    } catch (error) {
+      console.error('getAllUsers fonksiyonunda beklenmeyen hata:', error);
+      throw error;
+    }
   }
 };

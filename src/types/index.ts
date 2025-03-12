@@ -19,6 +19,8 @@ export type User = {
   status: 'active' | 'inactive';
   created_at?: string;
   user_regions?: { region_id: number; regions?: { id: number; name: string } }[];
+  // Supabase join sonucu olarak region bilgisi
+  region?: { id: number; name: string };
 };
 
 export type Region = {

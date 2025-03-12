@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
+import { checkSupabaseConnection } from '../services/supabaseClient';
 import { userService } from '../services';
 import { User, UserRole } from '../types';
 
@@ -66,8 +67,32 @@ export const UserManagementPage: React.FC = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Önce Supabase bağlantısını kontrol et
+      const isConnected = await checkSupabaseConnection();
+      if (!isConnected) {
+        console.error('Supabase bağlantısı kurulamadı!');
+        return;
+      }
+      
+      // Mevcut kullanıcı bilgilerini al
       const user = await userService.getCurrentUser();
       setCurrentUser(user);
+      
+      console.log('Mevcut kullanıcı:', user);
+      
+      if (!user) {
+        console.error('Oturum açmış kullanıcı bulunamadı');
+        return;
+      }
+      
+      // Kullanıcı rolü kontrolü
+      // Admin ve yöneticiler tüm kullanıcıları görebilir
+      if (user.role !== 'admin' && user.role !== 'manager') {
+        console.log('Yalnızca admin ve yöneticiler kullanıcı yönetimi sayfasına erişebilir');
+        navigate('/'); // Ana sayfaya yönlendir
+        return;
+      }
       
       // Bölgeleri yükle
       const { data: regionsData, error: regionsError } = await supabase
@@ -84,62 +109,41 @@ export const UserManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   const fetchUsers = async () => {
     try {
-      // userService ile tüm kullanıcıları al
-      const users = await userService.getAllUsers();
+      console.log('fetchUsers çağrıldı');
       
-      if (!users || users.length === 0) {
+      // userService ile tüm kullanıcıları al
+      const allUsers = await userService.getAllUsers();
+      console.log('getAllUsers sonuçları:', allUsers);
+      
+      if (!allUsers || allUsers.length === 0) {
+        console.log('Kullanıcı bulunamadı');
         setUsers([]);
         return;
       }
       
-      // Kullanıcı bölgelerini ayrı bir sorgu ile al
-      const { data: userRegionsData, error: regionsError } = await supabase
-        .from('user_regions')
-        .select(`
-          user_id,
-          region_id
-        `);
-      
-      if (regionsError) {
-        console.error('Kullanıcı bölge verileri alınırken hata:', regionsError);
-      }
-      
-      // Bölge bilgilerini ayrı bir sorgu ile al
-      const { data: regionsData, error: regionNamesError } = await supabase
-        .from('regions')
-        .select(`
-          id,
-          name
-        `);
-      
-      if (regionNamesError) {
-        console.error('Bölge verileri alınırken hata:', regionNamesError);
-      }
-      
-      // Verileri birleştir
-      const formattedUsers = users.map(user => {
-        // Kullanıcı bölgelerini bul
-        const userRegions = userRegionsData?.filter(ur => ur.user_id === user.id) || [];
+      // Bölge alanını düzelt
+      const formattedUsers = allUsers.map(user => {
+        // Eğer region bilgisi yoksa boş bir user_regions dizisi ekle
+        if (!user.user_regions) {
+          user.user_regions = [];
+          
+          // Eğer region_id varsa, region bilgisi ekle
+          if (user.region_id && user.region) {
+            user.user_regions.push({
+              region_id: user.region_id,
+              regions: user.region
+            });
+          }
+        }
         
-        // Bölge isimlerini ekle
-        const regionsWithNames = userRegions.map(ur => {
-          const region = regionsData?.find(r => r.id === ur.region_id);
-          return {
-            region_id: ur.region_id,
-            regions: region || undefined
-          };
-        });
-        
-        return {
-          ...user,
-          user_regions: regionsWithNames
-        };
+        return user;
       });
-    
+      
+      console.log('Formatlanmış kullanıcılar:', formattedUsers);
       setUsers(formattedUsers);
     } catch (error) {
       console.error('Kullanıcılar yüklenirken hata:', error);
@@ -328,9 +332,17 @@ export const UserManagementPage: React.FC = () => {
   };
 
   const getRegionName = (user: User) => {
-    if (user.user_regions && user.user_regions.length > 0) {
-      return user.user_regions[0].regions?.name;
+    // Önce user_regions'dan kontrol et
+    if (user.user_regions && user.user_regions.length > 0 && user.user_regions[0].regions?.name) {
+      return user.user_regions[0].regions.name;
     }
+    
+    // Sonra doğrudan region'dan kontrol et
+    if (user.region && user.region.name) {
+      return user.region.name;
+    }
+    
+    // Hiçbir bölge bilgisi yoksa
     return '-';
   };
 
