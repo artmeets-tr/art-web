@@ -174,6 +174,11 @@ export const UserManagementPage: React.FC = () => {
   }, [loadData]);
 
   const handleUserSelect = (user: User) => {
+    // Kendi hesabını düzenlemeye çalışıyor mu kontrol et
+    if (currentUser && user.id === currentUser.id) {
+      console.log("Kendi hesabınızı düzenliyorsunuz");
+    }
+    
     setSelectedUser(user);
     
     // Form verilerini doldur
