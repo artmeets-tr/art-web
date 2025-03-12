@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -34,7 +34,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import tr from 'date-fns/locale/tr';
 import { useNavigate, useParams } from 'react-router-dom';
 import { clinicService, productService, userService, proposalService } from '../services/apiService';
-import { Clinic, Product, User } from '../types';
+import { Clinic, Product, User, Proposal, ProposalItem } from '../types';
 
 export const ProposalFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -86,50 +86,63 @@ export const ProposalFormPage: React.FC = () => {
     'delivered'          // Teslim Edildi
   ];
 
-  // calculateTotals fonksiyonunu useCallback ile saralım
-  const calculateTotals = useCallback(() => {
-    let subtotal = 0;
+  // Form alanları düzenlenebilir mi?
+  const canEditProposal = () => {
+    // Yeni teklif oluşturma her zaman mümkün olmalı
+    if (!isEditMode) return true;
     
-    // Ürünlerin toplam tutarını hesapla
-    for (const item of items) {
-      // Mal fazlası yok ise normal hesaplama
-      if (!item.excess) {
-        subtotal += item.quantity * item.unit_price;
-      } else {
-        // Mal fazlası varsa, birim adetine göre hesaplama - toplam tutar aynı kalır
-        // Ancak fiili miktar arttırılır (kullanıcıya gösterilmek üzere)
-        subtotal += item.quantity * item.unit_price;
-      }
+    // Kullanıcı bilgisi yoksa düzenleme yapılamaz
+    if (!currentUser) return false;
+    
+    // Admin ve managerlar her zaman düzenleyebilir
+    if (['admin', 'manager'].includes(currentUser.role)) return true;
+    
+    // Saha kullanıcıları için:
+    if (currentUser.role === 'field_user') {
+      // Düzenleme modunda değilse (yeni teklif) her zaman düzenleyebilir
+      if (!isEditMode) return true;
+      
+      // Teklif "bekliyor" durumundaysa düzenleyebilir
+      return formData.status === 'pending';
     }
     
-    // İndirim uygula
-    const discount = formData.discount || 0;
-    const totalAmount = subtotal * (1 - discount / 100);
+    return false;
+  };
+  
+  // Kullanıcı durumu değiştirebilir mi?
+  const canChangeStatus = () => {
+    if (!currentUser) return false;
     
-    // Taksit tutarını hesapla
-    const installmentCount = formData.installment_count || 1;
-    const installmentAmount = totalAmount / installmentCount;
+    // Admin ve manager her durumda değiştirebilir
+    if (['admin', 'manager'].includes(currentUser.role)) return true;
     
-    setFormData(prev => ({
-      ...prev,
-      total_amount: parseFloat(totalAmount.toFixed(2)),
-      installment_amount: parseFloat(installmentAmount.toFixed(2))
-    }));
-  }, [items, formData.discount, formData.installment_count]);
-
-  // New handleNewProposal fonksiyonunu useCallback ile saralım
-  const handleNewProposal = useCallback((productsData: Product[]) => {
-    // Varsayılan olarak bir ürün ekleyelim
-    setItems([
-      {
-        product_id: productsData.length > 0 ? productsData[0].id : 0,
-        quantity: 1,
-        unit_price: productsData.length > 0 ? productsData[0].price : 0,
-        excess: false,
-        excess_percentage: 0
-      }
-    ]);
-  }, []);
+    // Saha kullanıcıları (field_user) sadece teklif onaylandıktan sonra süreci ilerletebilir
+    // Onaylanmamış tekliflerin durumunu değiştiremezler
+    if (currentUser.role === 'field_user' && formData.status !== 'pending') {
+      return true;
+    }
+    
+    return false;
+  };
+  
+  // Kullanıcı için uygun durum seçeneklerini filtreler
+  const getFilteredStatusOptions = () => {
+    if (!isEditMode) return [];
+    
+    // Admin ve managerlar tüm durumları değiştirebilir
+    if (['admin', 'manager'].includes(currentUser?.role || '')) {
+      return statusHierarchy.concat(['rejected', 'expired']);
+    }
+    
+    // Saha kullanıcıları için, eğer teklif onaylanmışsa sadece ileriye doğru durumlar gösterilir
+    if (currentUser?.role === 'field_user' && formData.status !== 'pending') {
+      const currentIndex = statusHierarchy.indexOf(formData.status);
+      // Sadece mevcut durum ve sonraki durumları göster (geriye gidemezler)
+      return statusHierarchy.filter((_, index) => index >= currentIndex);
+    }
+    
+    return [];
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -183,7 +196,7 @@ export const ProposalFormPage: React.FC = () => {
             console.error('Teklif yükleme hatası:', error);
             setMessage({ text: 'Teklif bilgileri yüklenirken bir hata oluştu', type: 'error' });
             // Hata durumunda yeni teklif oluşturma moduna geç
-            handleNewProposal(productsData);
+            handleNewProposal();
           }
         } else {
           // Yeni teklif için varsayılan bir ürün ekle
@@ -198,12 +211,42 @@ export const ProposalFormPage: React.FC = () => {
     };
 
     loadData();
-  }, [id, isEditMode, handleNewProposal]);
+  }, [id, isEditMode]);
 
   useEffect(() => {
     // Toplam tutarı hesapla
     calculateTotals();
-  }, [items, formData.discount, calculateTotals]);
+  }, [items, formData.discount]);
+
+  const calculateTotals = () => {
+    let subtotal = 0;
+    
+    // Ürünlerin toplam tutarını hesapla
+    for (const item of items) {
+      // Mal fazlası yok ise normal hesaplama
+      if (!item.excess) {
+        subtotal += item.quantity * item.unit_price;
+      } else {
+        // Mal fazlası varsa, birim adetine göre hesaplama - toplam tutar aynı kalır
+        // Ancak fiili miktar arttırılır (kullanıcıya gösterilmek üzere)
+        subtotal += item.quantity * item.unit_price;
+      }
+    }
+    
+    // İndirim uygula
+    const discount = formData.discount || 0;
+    const totalAmount = subtotal * (1 - discount / 100);
+    
+    // Taksit tutarını hesapla
+    const installmentCount = formData.installment_count || 1;
+    const installmentAmount = totalAmount / installmentCount;
+    
+    setFormData(prev => ({
+      ...prev,
+      total_amount: parseFloat(totalAmount.toFixed(2)),
+      installment_amount: parseFloat(installmentAmount.toFixed(2))
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -384,62 +427,30 @@ export const ProposalFormPage: React.FC = () => {
     }
   };
 
-  // Form alanları düzenlenebilir mi?
-  const canEditProposal = () => {
-    // Yeni teklif oluşturma her zaman mümkün olmalı
-    if (!isEditMode) return true;
-    
-    // Kullanıcı bilgisi yoksa düzenleme yapılamaz
-    if (!currentUser) return false;
-    
-    // Admin ve managerlar her zaman düzenleyebilir
-    if (['admin', 'manager'].includes(currentUser.role)) return true;
-    
-    // Saha kullanıcıları için:
-    if (currentUser.role === 'field_user') {
-      // Düzenleme modunda değilse (yeni teklif) her zaman düzenleyebilir
-      if (!isEditMode) return true;
-      
-      // Teklif "bekliyor" durumundaysa düzenleyebilir
-      return formData.status === 'pending';
+  // Yeni teklif oluşturma ayarları
+  const handleNewProposal = (productsData = products) => {
+    // Yeni teklif için varsayılan bir ürün ekle
+    if (productsData.length > 0) {
+      const defaultProduct = productsData[0];
+      setItems([{
+        product_id: defaultProduct.id,
+        quantity: 1,
+        excess: false,
+        unit_price: defaultProduct.price,
+        excess_percentage: 0
+      }]);
     }
     
-    return false;
-  };
-  
-  // Kullanıcı durumu değiştirebilir mi?
-  const canChangeStatus = () => {
-    if (!currentUser) return false;
-    
-    // Admin ve manager her durumda değiştirebilir
-    if (['admin', 'manager'].includes(currentUser.role)) return true;
-    
-    // Saha kullanıcıları (field_user) sadece teklif onaylandıktan sonra süreci ilerletebilir
-    // Onaylanmamış tekliflerin durumunu değiştiremezler
-    if (currentUser.role === 'field_user' && formData.status !== 'pending') {
-      return true;
-    }
-    
-    return false;
-  };
-  
-  // Kullanıcı için uygun durum seçeneklerini filtreler
-  const getFilteredStatusOptions = () => {
-    if (!isEditMode) return [];
-    
-    // Admin ve managerlar tüm durumları değiştirebilir
-    if (['admin', 'manager'].includes(currentUser?.role || '')) {
-      return statusHierarchy.concat(['rejected', 'expired']);
-    }
-    
-    // Saha kullanıcıları için, eğer teklif onaylanmışsa sadece ileriye doğru durumlar gösterilir
-    if (currentUser?.role === 'field_user' && formData.status !== 'pending') {
-      const currentIndex = statusHierarchy.indexOf(formData.status);
-      // Sadece mevcut durum ve sonraki durumları göster (geriye gidemezler)
-      return statusHierarchy.filter((_, index) => index >= currentIndex);
-    }
-    
-    return [];
+    // Yeni teklif için durum her zaman "bekliyor" olmalı
+    setFormData(prev => ({ 
+      ...prev, 
+      status: 'pending',
+      installment_count: 1,
+      first_payment_date: new Date(),
+      discount: 0,
+      total_amount: 0,
+      installment_amount: 0
+    }));
   };
 
   if (loading) {
@@ -625,6 +636,9 @@ export const ProposalFormPage: React.FC = () => {
                   </TableHead>
                   <TableBody>
                     {items.map((item, index) => {
+                      const product = products.find(p => p.id === item.product_id);
+                      let itemTotal = item.quantity * item.unit_price;
+                      
                       // Kullanıcıya gösterilecek fiili miktar
                       let effectiveQuantity = item.quantity;
                       if (item.excess && item.excess_percentage > 0) {
@@ -698,7 +712,7 @@ export const ProposalFormPage: React.FC = () => {
                             />
                           </TableCell>
                           <TableCell align="right">
-                            {formatCurrency(item.quantity * item.unit_price)}
+                            {formatCurrency(itemTotal)}
                           </TableCell>
                           {(!isEditMode || canEditProposal()) && (
                             <TableCell align="center">

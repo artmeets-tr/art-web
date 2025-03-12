@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
-import { Proposal } from '../types';
-import { handleSupabaseListQuery, handleSupabaseSingleQuery, getUsersInRegion } from './utils/supabaseHelpers';
+import { Proposal, ProposalItem } from '../types';
+import { handleSupabaseQuery, handleSupabaseListQuery, handleSupabaseSingleQuery, getUsersInRegion, checkActiveSession } from './utils/supabaseHelpers';
 import { userService } from './userService';
 
 /**
@@ -370,7 +370,7 @@ export const proposalService = {
       console.log('Teklif güncelleniyor:', updatesWithCorrectUserId);
       
       // Teklif ana bilgilerini güncelle
-      const { data: updatedProposal, error: updateError } = await handleSupabaseSingleQuery<any>(
+      const data = await handleSupabaseSingleQuery<any>(
         supabase
           .from('proposals')
           .update(updatesWithCorrectUserId)
@@ -379,12 +379,6 @@ export const proposalService = {
           .single(),
         'Teklif güncellenirken hata'
       );
-      
-      if (updateError) {
-        console.error('Teklif güncelleme hatası:', updateError);
-      } else {
-        console.log('Güncellenen teklif:', updatedProposal);
-      }
       
       // Teklif öğeleri güncellenecekse
       if (items && items.length > 0) {

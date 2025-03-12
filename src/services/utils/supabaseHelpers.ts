@@ -1,4 +1,4 @@
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
+import { PostgrestError, PostgrestSingleResponse } from '@supabase/supabase-js';
 import type { PostgrestFilterBuilder, PostgrestBuilder } from '@supabase/postgrest-js';
 import { supabase } from '../../lib/supabase';
 

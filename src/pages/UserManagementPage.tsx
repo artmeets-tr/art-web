@@ -31,21 +31,23 @@ import {
   CheckCircle,
   Refresh
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
-import { userService } from '../services/apiService';
-import { User } from '../types';
+import { userService } from '../services';
+import { User, UserRole } from '../types';
 
 interface UserForm {
   id?: string;
   email: string;
   first_name: string | undefined;
   last_name: string | undefined;
-  role: string;
+  role: UserRole;
   status: 'active' | 'inactive';
   region_id?: number | null;
 }
 
 export const UserManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [regions, setRegions] = useState<{id: number, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,26 +88,12 @@ export const UserManagementPage: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      console.log('Kullanıcı verilerini getiriliyor...');
+      // userService ile tüm kullanıcıları al
+      const users = await userService.getAllUsers();
       
-      // Temel kullanıcı bilgilerini al
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select(`
-          id,
-          email,
-          first_name,
-          last_name,
-          role,
-          status,
-          created_at,
-          region_id
-        `)
-        .order('first_name');
-
-      if (userError) {
-        console.error('Kullanıcı verileri alınırken hata:', userError);
-        throw userError;
+      if (!users || users.length === 0) {
+        setUsers([]);
+        return;
       }
       
       // Kullanıcı bölgelerini ayrı bir sorgu ile al
@@ -132,40 +120,30 @@ export const UserManagementPage: React.FC = () => {
         console.error('Bölge verileri alınırken hata:', regionNamesError);
       }
       
-      console.log('Kullanıcı verileri:', userData);
-      console.log('Kullanıcı bölge verileri:', userRegionsData);
-      console.log('Bölge verileri:', regionsData);
-      
       // Verileri birleştir
-      if (userData) {
-        const formattedUsers = userData.map(user => {
-          // Kullanıcı bölgelerini bul
-          const userRegions = userRegionsData?.filter(ur => ur.user_id === user.id) || [];
-          
-          // Bölge isimlerini ekle
-          const regionsWithNames = userRegions.map(ur => {
-            const region = regionsData?.find(r => r.id === ur.region_id);
-            return {
-              region_id: ur.region_id,
-              regions: region || undefined
-            };
-          });
-          
-          console.log(`Kullanıcı ${user.id} bölgeleri:`, regionsWithNames);
-          
+      const formattedUsers = users.map(user => {
+        // Kullanıcı bölgelerini bul
+        const userRegions = userRegionsData?.filter(ur => ur.user_id === user.id) || [];
+        
+        // Bölge isimlerini ekle
+        const regionsWithNames = userRegions.map(ur => {
+          const region = regionsData?.find(r => r.id === ur.region_id);
           return {
-            ...user,
-            user_regions: regionsWithNames
+            region_id: ur.region_id,
+            regions: region || undefined
           };
         });
-      
-        console.log('Biçimlendirilmiş kullanıcı verileri:', formattedUsers);
-        setUsers(formattedUsers);
-      } else {
-        setUsers([]);
-      }
+        
+        return {
+          ...user,
+          user_regions: regionsWithNames
+        };
+      });
+    
+      setUsers(formattedUsers);
     } catch (error) {
       console.error('Kullanıcılar yüklenirken hata:', error);
+      setUsers([]);
     }
   };
 
@@ -174,11 +152,6 @@ export const UserManagementPage: React.FC = () => {
   }, [loadData]);
 
   const handleUserSelect = (user: User) => {
-    // Kendi hesabını düzenlemeye çalışıyor mu kontrol et
-    if (currentUser && user.id === currentUser.id) {
-      console.log("Kendi hesabınızı düzenliyorsunuz");
-    }
-    
     setSelectedUser(user);
     
     // Form verilerini doldur
@@ -256,7 +229,7 @@ export const UserManagementPage: React.FC = () => {
             email: formData.email,
             first_name: safeFirstName,
             last_name: safeLastName,
-            role: formData.role,
+            role: formData.role as UserRole,
             status: formData.status,
             region_id: formData.region_id
           })
@@ -282,33 +255,38 @@ export const UserManagementPage: React.FC = () => {
         }
       } else {
         // Yeni kullanıcı oluşturma
-        const { data: newUser, error } = await supabase
-          .from('users')
-          .insert({
-            email: formData.email,
+        try {
+          // Geçici rastgele şifre oluştur (kullanıcı daha sonra değiştirebilir)
+          const tempPassword = Math.random().toString(36).slice(-10);
+          
+          // Kullanıcı verilerini hazırla
+          const userData = {
             first_name: safeFirstName,
             last_name: safeLastName,
-            role: formData.role,
+            role: formData.role as UserRole,
             status: formData.status,
-            region_id: formData.region_id,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+            region_id: formData.region_id || undefined
+          };
           
-        if (error) {
-          console.error('Kullanıcı oluşturma hatası:', error);
-          throw error;
-        }
-
-        // Kullanıcı-bölge ilişkisini ekle
-        if (formData.region_id && newUser) {
-          await supabase
-            .from('user_regions')
-            .insert({
-              user_id: newUser.id,
-              region_id: formData.region_id
-            });
+          // userService ile kullanıcı oluştur
+          const createdUser = await userService.createUser(formData.email, tempPassword, userData);
+          console.log('Kullanıcı başarıyla oluşturuldu:', createdUser);
+          
+          // Kullanıcı-bölge ilişkisini ekle
+          if (formData.region_id && createdUser.id) {
+            await supabase
+              .from('user_regions')
+              .insert({
+                user_id: createdUser.id,
+                region_id: formData.region_id
+              });
+          }
+          
+          alert(`Kullanıcı başarıyla oluşturuldu. Geçici şifre: ${tempPassword}`);
+        } catch (error: any) {
+          console.error('Kullanıcı oluşturulurken hata:', error);
+          alert(`Kullanıcı oluşturulurken hata: ${error.message || 'Bilinmeyen hata'}`);
+          return;
         }
       }
       

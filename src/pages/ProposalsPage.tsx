@@ -33,9 +33,11 @@ import {
   Search, 
   Add, 
   Visibility, 
+  Description, 
   Business, 
   AttachMoney,
   Edit,
+  MoneyOff,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -69,7 +71,6 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export const ProposalsPage: React.FC = () => {
-  const navigate = useNavigate();
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [filteredProposals, setFilteredProposals] = useState<Proposal[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,6 +83,7 @@ export const ProposalsPage: React.FC = () => {
   const [statusNotes, setStatusNotes] = useState('');
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const navigate = useNavigate();
 
   const filterProposals = useCallback((data = proposals) => {
     if (!data) return;
@@ -104,7 +106,29 @@ export const ProposalsPage: React.FC = () => {
     setFilteredProposals(filtered);
   }, [searchTerm, tabValue, proposals]);
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  // Sekme değiştiğinde teklifleri yeniden yükle
+  useEffect(() => {
+    if (currentUser) {
+      fetchData();
+    }
+  }, [tabValue, currentUser]);
+
+  const loadUser = async () => {
+    try {
+      const user = await userService.getCurrentUser();
+      setCurrentUser(user);
+      // Kullanıcı bilgisi yüklendikten sonra teklifleri yükle
+      fetchData();
+    } catch (error) {
+      console.error('Kullanıcı bilgisi alınırken hata:', error);
+    }
+  };
+
+  const fetchData = async () => {
     try {
       setLoading(true);
       // Her sorguda cache'i önlemek için timestamp ekleyelim
@@ -131,34 +155,12 @@ export const ProposalsPage: React.FC = () => {
       setProposals(data);
       filterProposals(data);
     } catch (error) {
-      console.error('Teklifler alınırken hata:', error);
+      console.error('Veri alınırken hata oluştu:', error);
       setMessage({ type: 'error', text: 'Teklifler yüklenirken bir hata oluştu.' });
     } finally {
       setLoading(false);
     }
-  }, [currentUser, filterProposals]);
-
-  const loadUser = useCallback(async () => {
-    try {
-      const user = await userService.getCurrentUser();
-      setCurrentUser(user);
-      // Kullanıcı bilgisi yüklendikten sonra teklifleri yükle
-      fetchData();
-    } catch (error) {
-      console.error('Kullanıcı bilgisi alınırken hata:', error);
-    }
-  }, [fetchData]);
-
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
-
-  // Sekme değiştiğinde teklifleri yeniden yükle
-  useEffect(() => {
-    if (currentUser) {
-      fetchData();
-    }
-  }, [tabValue, currentUser, fetchData]);
+  };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);

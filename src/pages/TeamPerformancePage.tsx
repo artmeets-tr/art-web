@@ -12,17 +12,20 @@ import {
   Divider,
   LinearProgress,
   Chip,
+  useTheme,
   Tab,
   Tabs,
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Button
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
 import formatDistance from 'date-fns/formatDistance';
 import { tr as trLocale } from 'date-fns/locale';
+import { userService } from '../services/apiService';
 
 interface PerformanceData {
   userId: string;
@@ -63,6 +66,7 @@ export const TeamPerformancePage: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [regionFilter, setRegionFilter] = useState<number | null>(null);
   const [regions, setRegions] = useState<{ id: number, name: string }[]>([]);
+  const [chartData, setChartData] = useState<any>({});
   const [tabValue, setTabValue] = useState(0);
 
   const fetchRegions = useCallback(async () => {
@@ -190,7 +194,6 @@ export const TeamPerformancePage: React.FC = () => {
         
         if (currentUser) {
           setUser(currentUser);
-          console.log("Mevcut kullanıcı:", user?.id);
           await fetchRegions();
           await fetchPerformanceData(currentUser);
         } else {
@@ -204,7 +207,7 @@ export const TeamPerformancePage: React.FC = () => {
     };
 
     loadData();
-  }, [navigate, fetchPerformanceData, fetchRegions, user]);
+  }, [navigate, fetchPerformanceData, fetchRegions]);
 
   const prepareChartData = (data: PerformanceData[]) => {
     // Prepare data for bar chart
