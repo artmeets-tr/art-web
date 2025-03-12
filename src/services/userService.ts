@@ -150,10 +150,10 @@ export const userService = {
     try {
       console.log('getAllUsers çağrıldı');
       
-      // Daha detaylı sorgu - kullanıcıları ve bölge bilgilerini al
+      // Sorgu düzeltildi: bölge ilişkisi ve join yapısı düzgün şekilde tanımlandı
       const { data, error } = await supabase
         .from('users')
-        .select('*, region:region_id(id, name)')
+        .select('*, regions(id, name)')
         .order('first_name', { ascending: true });
       
       if (error) {

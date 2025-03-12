@@ -21,6 +21,8 @@ export type User = {
   user_regions?: { region_id: number; regions?: { id: number; name: string } }[];
   // Supabase join sonucu olarak region bilgisi
   region?: { id: number; name: string };
+  // Regions tablosu ile join sonucu
+  regions?: { id: number; name: string };
 };
 
 export type Region = {

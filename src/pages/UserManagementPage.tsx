@@ -127,15 +127,16 @@ export const UserManagementPage: React.FC = () => {
       
       // Bölge alanını düzelt
       const formattedUsers = allUsers.map(user => {
-        // Eğer region bilgisi yoksa boş bir user_regions dizisi ekle
+        // regions verilerini user_regions dizisi yapısına dönüştür
         if (!user.user_regions) {
           user.user_regions = [];
           
-          // Eğer region_id varsa, region bilgisi ekle
-          if (user.region_id && user.region) {
+          // Eğer regions verisi varsa
+          if (user.regions) {
+            const regionInfo = user.regions;
             user.user_regions.push({
-              region_id: user.region_id,
-              regions: user.region
+              region_id: user.region_id || regionInfo.id,
+              regions: regionInfo
             });
           }
         }
@@ -340,6 +341,11 @@ export const UserManagementPage: React.FC = () => {
     // Sonra doğrudan region'dan kontrol et
     if (user.region && user.region.name) {
       return user.region.name;
+    }
+    
+    // Son olarak regions'dan kontrol et
+    if (user.regions && user.regions.name) {
+      return user.regions.name;
     }
     
     // Hiçbir bölge bilgisi yoksa
