@@ -31,7 +31,6 @@ import {
   CheckCircle,
   Refresh
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
 import { userService } from '../services/apiService';
 import { User } from '../types';
@@ -47,7 +46,6 @@ interface UserForm {
 }
 
 export const UserManagementPage: React.FC = () => {
-  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [regions, setRegions] = useState<{id: number, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +86,8 @@ export const UserManagementPage: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
+      console.log('Kullanıcı verilerini getiriliyor...');
+      
       // Temel kullanıcı bilgilerini al
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -151,12 +151,15 @@ export const UserManagementPage: React.FC = () => {
             };
           });
           
+          console.log(`Kullanıcı ${user.id} bölgeleri:`, regionsWithNames);
+          
           return {
             ...user,
             user_regions: regionsWithNames
           };
         });
       
+        console.log('Biçimlendirilmiş kullanıcı verileri:', formattedUsers);
         setUsers(formattedUsers);
       } else {
         setUsers([]);
@@ -274,21 +277,34 @@ export const UserManagementPage: React.FC = () => {
         }
       } else {
         // Yeni kullanıcı oluşturma
-        // Gerçek uygulamada kullanıcı oluşturma işlemi
-        // Auth API üzerinden yapılır
-        
-        // API hazır olduğunda kullanılacak güvenli değerler
-        // const userData = {
-        //   email: formData.email,
-        //   first_name: safeFirstName,
-        //   last_name: safeLastName,
-        //   role: formData.role,
-        //   status: formData.status,
-        //   region_id: formData.region_id
-        // };
-        
-        alert('Kullanıcı oluşturma API hazır değil');
-        return;
+        const { data: newUser, error } = await supabase
+          .from('users')
+          .insert({
+            email: formData.email,
+            first_name: safeFirstName,
+            last_name: safeLastName,
+            role: formData.role,
+            status: formData.status,
+            region_id: formData.region_id,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Kullanıcı oluşturma hatası:', error);
+          throw error;
+        }
+
+        // Kullanıcı-bölge ilişkisini ekle
+        if (formData.region_id && newUser) {
+          await supabase
+            .from('user_regions')
+            .insert({
+              user_id: newUser.id,
+              region_id: formData.region_id
+            });
+        }
       }
       
       // Kullanıcı listesini yenile
